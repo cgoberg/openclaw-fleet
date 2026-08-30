@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build v0.1.0 release artifacts and SHA256SUMS into release/<version>/ (gitignored).
+# Build release artifacts and SHA256SUMS into release/<version>/ (gitignored).
 # Local-only: does not tag, publish, push, or leave the checkout.
 set -euo pipefail
 

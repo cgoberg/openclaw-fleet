@@ -44,9 +44,9 @@ The Rust binary handles SSH connections and metric collection. The TypeScript pl
 - **Natural language** -- "What's build-node doing?" / "Is Ollama running?" / "Who's logged into gpu-node?"
 - **Proactive alerts** -- Node offline, disk critically low, disk filling fast, RAM exhaustion, temperature critical, SSH auth failures, login/logout events
 - **Trend detection** -- Linear regression over rolling metric windows; predicts when disk will fill, temperatures will overheat
-- **Live dashboard** -- Dark-themed single-page fleet view at `/fleet` with auto-refresh, leash tension bars, expandable process lists
+- **Protected dashboard** -- Gateway-authenticated fleet view at `/fleet`, with auto-refresh, leash tension bars, and expandable process lists
 - **Cross-platform** -- Linux, macOS, Windows targets from a single binary
-- **Flexible connection** -- SSH probing (zero install) or lightweight agent (easiest setup)
+- **Zero-install targets** -- SSH probing requires no OpenClaw Fleet software on monitored machines
 - **Configurable thresholds** -- Probe intervals, load classifications, idle timeouts, all in YAML
 
 ## Quick Start
@@ -117,7 +117,7 @@ Then ask your agent:
 How's the fleet?
 ```
 
-Dashboard: `http://localhost:18789/fleet`
+Dashboard: `http://localhost:18789/fleet` after authenticating to the OpenClaw gateway.
 
 ## Chat Examples
 
@@ -340,17 +340,21 @@ load_thresholds:
 
 openclaw-fleet looks for keys in `~/.ssh/` in this order: `id_ed25519`, `id_rsa`, `id_ecdsa`. Password auth is not supported -- use key-based auth.
 
+The server host key must already be present in `~/.ssh/known_hosts`; unknown or changed keys fail closed. Connect once with the standard `ssh` client and verify the fingerprint through a trusted channel before accepting it. Do not automate `StrictHostKeyChecking=no` or blindly trust `ssh-keyscan` output.
+
+Use a dedicated, unprivileged monitoring account on each target. It needs permission only to run the documented probe commands. OpenClaw Fleet reports process names and logged-in users, so treat the gateway, dashboard, and agent conversation as sensitive operational surfaces.
+
 For Windows targets, enable OpenSSH Server in Windows Settings > Apps > Optional Features, then copy your public key to `C:\Users\<user>\.ssh\authorized_keys`.
 
 ## FAQ
 
 **Do I need to install software on the computers I'm monitoring?**
 
-You have two options. The recommended approach is to install the tiny Leassh agent (under 10MB) -- just enter a pairing code and it connects automatically. Alternatively, power users can use SSH probing which requires no software on target machines but needs SSH access configured. Both give you the same monitoring data.
+No. OpenClaw Fleet connects over SSH and requires no OpenClaw Fleet software on the monitored machine. Leassh offers a separate managed-agent path for its commercial product.
 
-**Can I deploy the agent remotely via SSH?**
+**Why does an unknown SSH host fail to connect?**
 
-Yes. If you already have SSH access, you can install the agent without physically touching the machine. Run the install script via SSH with your pairing code. On macOS, the Screen Recording permission still needs one-time physical approval -- everything else works immediately.
+Host identity verification is mandatory. Verify the machine's fingerprint through a trusted channel, connect once with your normal SSH client, and then retry OpenClaw Fleet.
 
 ## Contributing
 

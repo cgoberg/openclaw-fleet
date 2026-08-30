@@ -43,11 +43,11 @@ const manifest = JSON.parse(
 );
 const skill = readFileSync(join(PLUGIN_ROOT, "skills", "SKILL.md"), "utf-8");
 
-check("package.json version is 0.1.0", pkg.version === "0.1.0", pkg.version);
-check("manifest version is 0.1.0", manifest.version === "0.1.0", manifest.version);
+check("package.json version is 0.1.1", pkg.version === "0.1.1", pkg.version);
+check("manifest version is 0.1.1", manifest.version === "0.1.1", manifest.version);
 check(
-  "SKILL.md frontmatter version is 0.1.0",
-  /^version:\s*0\.1\.0$/m.test(skill),
+  "SKILL.md frontmatter version is 0.1.1",
+  /^version:\s*0\.1\.1$/m.test(skill),
   "version field mismatch"
 );
 
@@ -81,7 +81,7 @@ writeFileSync(fleetYaml, "nodes: []\n");
 const api = {
   pluginConfig: { configPath: fleetYaml },
   log: () => {},
-  registerRoute: (method, path, handler) => routes.set(`${method} ${path}`, handler),
+  registerHttpRoute: (route) => routes.set(`GET ${route.path}`, route),
   registerTool: (tool) => tools.push(tool.name),
   registerService: (svc) => {
     service = svc;
@@ -98,6 +98,11 @@ check(
 );
 check("registers GET /fleet dashboard route", routes.has("GET /fleet"));
 check("registers GET /fleet/api/status route", routes.has("GET /fleet/api/status"));
+check(
+  "dashboard routes require gateway authentication",
+  routes.get("GET /fleet")?.auth === "gateway" &&
+    routes.get("GET /fleet/api/status")?.auth === "gateway"
+);
 check("registers background service", service !== null);
 
 // --- 4. Dashboard + status API against the real binary ------------------------
@@ -132,7 +137,7 @@ if (!binPath) {
 
     let html = "";
     let htmlStatus = 200;
-    await routes.get("GET /fleet")(
+    await routes.get("GET /fleet").handler(
       {},
       {
         setHeader: () => {},
@@ -146,7 +151,7 @@ if (!binPath) {
 
     let rawStatus = "";
     let apiStatus = 200;
-    await routes.get("GET /fleet/api/status")(
+    await routes.get("GET /fleet/api/status").handler(
       {},
       {
         setHeader: () => {},

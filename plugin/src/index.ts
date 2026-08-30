@@ -23,31 +23,50 @@ export default {
     // Register tools (fleet_status, node_detail, get_value_gap)
     registerTools(api, binary);
 
-    // --- HTTP routes ---
+    // --- Gateway-authenticated HTTP routes ---
+
+    if (typeof api.registerHttpRoute !== "function") {
+      throw new Error(
+        "OpenClaw Fleet requires an OpenClaw version with authenticated registerHttpRoute support"
+      );
+    }
 
     // Serve the dashboard HTML
-    api.registerRoute("GET", "/fleet", (_req: any, res: any) => {
-      try {
-        const html = fs.readFileSync(DASHBOARD_PATH, "utf-8");
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end(html);
-      } catch (err: any) {
-        res.statusCode = 500;
-        res.end(`Dashboard not found: ${err.message}`);
-      }
+    api.registerHttpRoute({
+      path: "/fleet",
+      auth: "gateway",
+      handler: (_req: any, res: any) => {
+        try {
+          const html = fs.readFileSync(DASHBOARD_PATH, "utf-8");
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          res.end(html);
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.end(`Dashboard not found: ${err.message}`);
+        }
+      },
     });
 
     // JSON API endpoint for the dashboard
-    api.registerRoute("GET", "/fleet/api/status", async (_req: any, res: any) => {
-      try {
-        const status = await binary.getFleetStatus();
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(status));
-      } catch (err: any) {
-        res.statusCode = 502;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: err.message }));
-      }
+    api.registerHttpRoute({
+      path: "/fleet/api/status",
+      auth: "gateway",
+      handler: async (_req: any, res: any) => {
+        try {
+          const status = await binary.getFleetStatus();
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Cache-Control", "no-store");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          res.end(JSON.stringify(status));
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      },
     });
 
     // --- Background service: start/stop the binary with the plugin lifecycle ---

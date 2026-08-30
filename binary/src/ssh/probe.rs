@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use russh::client;
-use russh::keys::{load_secret_key, PrivateKeyWithHashAlg};
+use russh::keys::{check_known_hosts, load_secret_key, PrivateKeyWithHashAlg};
 use russh::ChannelMsg;
 use tracing::{debug, warn};
 
@@ -11,17 +11,30 @@ use crate::config::NodeConfig;
 use crate::ssh::commands;
 use crate::state::ProbeResult;
 
-/// Minimal SSH client handler that accepts all host keys.
-struct SshHandler;
+/// SSH client handler that verifies the server against ~/.ssh/known_hosts.
+struct SshHandler {
+    host: String,
+    port: u16,
+}
 
 impl client::Handler for SshHandler {
     type Error = russh::Error;
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::PublicKey,
+        server_public_key: &russh::keys::PublicKey,
     ) -> Result<bool, Self::Error> {
-        Ok(true)
+        match check_known_hosts(&self.host, self.port, server_public_key) {
+            Ok(true) => Ok(true),
+            Ok(false) => {
+                warn!(host = %self.host, port = self.port, "SSH host key is not present in known_hosts");
+                Ok(false)
+            }
+            Err(error) => {
+                warn!(host = %self.host, port = self.port, error = %error, "SSH host key verification failed");
+                Ok(false)
+            }
+        }
     }
 }
 
@@ -123,7 +136,10 @@ impl NodeProber {
             ..Default::default()
         };
 
-        let handler = SshHandler;
+        let handler = SshHandler {
+            host: host.clone(),
+            port,
+        };
         let mut session =
             client::connect(Arc::new(ssh_config), (host.as_str(), port), handler)
                 .await

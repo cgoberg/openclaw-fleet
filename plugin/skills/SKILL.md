@@ -1,7 +1,7 @@
 ---
 name: openclaw-fleet
 description: Talk to your machines. SSH fleet monitoring with real-time metrics, proactive alerts, and trend prediction — free, unlimited nodes, MIT.
-version: 0.1.0
+version: 0.1.1
 metadata:
   openclaw:
     emoji: "🖥️"

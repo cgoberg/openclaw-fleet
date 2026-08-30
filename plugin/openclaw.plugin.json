@@ -2,7 +2,7 @@
   "id": "openclaw-fleet",
   "name": "OpenClaw Fleet by Leassh",
   "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
