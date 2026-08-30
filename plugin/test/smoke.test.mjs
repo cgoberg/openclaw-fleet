@@ -44,11 +44,11 @@ const manifest = JSON.parse(
 const skill = readFileSync(join(PLUGIN_ROOT, "skills", "SKILL.md"), "utf-8");
 const dashboard = readFileSync(join(PLUGIN_ROOT, "assets", "dashboard.html"), "utf-8");
 
-check("package.json version is 0.1.2", pkg.version === "0.1.2", pkg.version);
-check("manifest version is 0.1.2", manifest.version === "0.1.2", manifest.version);
+check("package.json version is 0.1.3", pkg.version === "0.1.3", pkg.version);
+check("manifest version is 0.1.3", manifest.version === "0.1.3", manifest.version);
 check(
-  "SKILL.md frontmatter version is 0.1.2",
-  /^version:\s*0\.1\.2$/m.test(skill),
+  "SKILL.md frontmatter version is 0.1.3",
+  /^version:\s*0\.1\.3$/m.test(skill),
   "version field mismatch"
 );
 

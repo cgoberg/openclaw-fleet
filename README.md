@@ -338,7 +338,7 @@ load_thresholds:
 
 ### SSH Key Setup
 
-openclaw-fleet looks for keys in `~/.ssh/` in this order: `id_ed25519`, `id_rsa`, `id_ecdsa`. Password auth is not supported -- use key-based auth.
+openclaw-fleet looks for modern keys in `~/.ssh/` in this order: `id_ed25519`, `id_ecdsa`. Password and RSA-key authentication are not supported.
 
 The server host key must already be present in `~/.ssh/known_hosts`; unknown or changed keys fail closed. Connect once with the standard `ssh` client and verify the fingerprint through a trusted channel before accepting it. Do not automate `StrictHostKeyChecking=no` or blindly trust `ssh-keyscan` output.
 

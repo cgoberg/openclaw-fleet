@@ -1,10 +1,10 @@
-# Release: v0.1.2
+# Release: v0.1.3
 
 Status: **security hardening release** for OpenClaw Fleet by Leassh.
 
 ## Version alignment
 
-One version everywhere, `0.1.2`:
+One version everywhere, `0.1.3`:
 
 | File | Field |
 |---|---|
@@ -27,7 +27,7 @@ One version everywhere, `0.1.2`:
 
 ## Install command (documented behavior)
 
-v0.1.2 is source-first; the Quick Start builds both artifacts and installs from
+v0.1.3 is source-first; the Quick Start builds both artifacts and installs from
 the local checkout:
 
 ```bash
@@ -57,18 +57,18 @@ empty fleet (`nodes: []`). It writes only to a temp dir.
 scripts/package-release.sh
 ```
 
-Produces `release/v0.1.2/` (gitignored):
+Produces `release/v0.1.3/` (gitignored):
 
-- `openclaw-fleet-plugin-v0.1.2.tgz` — `npm pack` of the plugin (contents gated
+- `openclaw-fleet-plugin-v0.1.3.tgz` — `npm pack` of the plugin (contents gated
   by the `files` allowlist: `dist/`, `assets/`, `skills/`,
   `openclaw.plugin.json`)
-- `openclaw-fleet-linux-x86_64-v0.1.2` — release binary
+- `openclaw-fleet-linux-x86_64-v0.1.3` — release binary
 - `SHA256SUMS.txt` — sha256 of every artifact
 
 Verify with:
 
 ```bash
-cd release/v0.1.2 && sha256sum -c SHA256SUMS.txt
+cd release/v0.1.3 && sha256sum -c SHA256SUMS.txt
 ```
 
 Inspect tarball contents before shipping with `tar -tzf <tgz>` or
@@ -80,7 +80,7 @@ Inspect tarball contents before shipping with `tar -tzf <tgz>` or
   `plugin/LICENSE`, and `binary/Cargo.toml`.
 - No secrets or machine-specific editor configuration in the release tree;
   `.vscode/` is ignored.
-- SSH-only probing uses key auth (`id_ed25519`/`id_rsa`/`id_ecdsa`) and requires
+- SSH-only probing uses modern key auth (`id_ed25519`/`id_ecdsa`) and requires
   a matching `known_hosts` entry. Unknown and changed server keys fail closed.
 - Dashboard and status routes use OpenClaw's `auth: "gateway"` HTTP boundary.
   Older route APIs are rejected instead of falling back to an unprotected path.
@@ -95,5 +95,5 @@ Inspect tarball contents before shipping with `tar -tzf <tgz>` or
 
 ## Distribution follow-up
 
-The GitHub release is the canonical v0.1.2 distribution. ClawHub/npm packaging
+The GitHub release is the canonical v0.1.3 distribution. ClawHub/npm packaging
 can follow once the source-first installation has received field testing.

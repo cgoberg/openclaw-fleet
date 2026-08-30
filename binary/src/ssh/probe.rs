@@ -3,7 +3,9 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use russh::client;
-use russh::keys::{check_known_hosts, load_secret_key, PrivateKeyWithHashAlg};
+use russh::keys::{
+    check_known_hosts, load_secret_key, PrivateKeyWithHashAlg, PublicKeyOrCertificate,
+};
 use russh::ChannelMsg;
 use tracing::{debug, warn};
 
@@ -22,9 +24,9 @@ impl client::Handler for SshHandler {
 
     async fn check_server_key(
         &mut self,
-        server_public_key: &russh::keys::PublicKey,
+        server_public_key: &PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
-        match check_known_hosts(&self.host, self.port, server_public_key) {
+        match check_known_hosts(&self.host, self.port, &server_public_key.public_key()) {
             Ok(true) => Ok(true),
             Ok(false) => {
                 warn!(host = %self.host, port = self.port, "SSH host key is not present in known_hosts");
@@ -102,7 +104,10 @@ fn ssh_key_paths() -> Vec<std::path::PathBuf> {
         None => return vec![],
     };
 
-    let candidates = ["id_ed25519", "id_rsa", "id_ecdsa"];
+    // RSA support is intentionally excluded: the SSH client only needs modern
+    // signing keys and avoiding RSA keeps an affected decryption dependency out
+    // of the published binary.
+    let candidates = ["id_ed25519", "id_ecdsa"];
     candidates
         .iter()
         .map(|name| ssh_dir.join(name))
