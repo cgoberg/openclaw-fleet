@@ -1,6 +1,6 @@
 {
   "name": "openclaw-fleet",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
   "main": "dist/index.js",
   "scripts": {

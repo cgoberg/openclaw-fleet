@@ -42,12 +42,13 @@ const manifest = JSON.parse(
   readFileSync(join(PLUGIN_ROOT, "openclaw.plugin.json"), "utf-8")
 );
 const skill = readFileSync(join(PLUGIN_ROOT, "skills", "SKILL.md"), "utf-8");
+const dashboard = readFileSync(join(PLUGIN_ROOT, "assets", "dashboard.html"), "utf-8");
 
-check("package.json version is 0.1.1", pkg.version === "0.1.1", pkg.version);
-check("manifest version is 0.1.1", manifest.version === "0.1.1", manifest.version);
+check("package.json version is 0.1.2", pkg.version === "0.1.2", pkg.version);
+check("manifest version is 0.1.2", manifest.version === "0.1.2", manifest.version);
 check(
-  "SKILL.md frontmatter version is 0.1.1",
-  /^version:\s*0\.1\.1$/m.test(skill),
+  "SKILL.md frontmatter version is 0.1.2",
+  /^version:\s*0\.1\.2$/m.test(skill),
   "version field mismatch"
 );
 
@@ -59,6 +60,11 @@ check(
   JSON.stringify(manifest.configSchema)
 );
 check("manifest id matches package name", manifest.id === pkg.name);
+check("dashboard contains no inline event handlers", !/<[^>]+\son[a-z]+\s*=/i.test(dashboard));
+check(
+  "dashboard binds node clicks without interpolating JavaScript",
+  dashboard.includes("node.addEventListener('click'")
+);
 
 const declaredTools = manifest.contracts?.tools ?? [];
 const expectedTools = ["fleet_status", "node_detail", "get_value_gap"];

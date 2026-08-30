@@ -594,7 +594,7 @@
       procsHtml = '<div style="color:var(--text-dim);padding:8px 0">No process data available</div>';
     }
 
-    return `<div class="node ${isExpanded ? 'expanded' : ''}" data-name="${esc(n.name)}" onclick="window._toggle('${esc(n.name)}')">
+    return `<div class="node ${isExpanded ? 'expanded' : ''}" data-name="${esc(n.name)}">
       <div class="node-indicator ${indicatorClass(act)}"></div>
       <div class="node-body">
         <div class="node-top">
@@ -654,6 +654,9 @@
 
     // Nodes
     fleet.innerHTML = nodes.map(renderNode).join('');
+    for (const node of fleet.querySelectorAll('.node[data-name]')) {
+      node.addEventListener('click', () => window._toggle(node.dataset.name || ''));
+    }
 
     // Events
     renderEvents();
