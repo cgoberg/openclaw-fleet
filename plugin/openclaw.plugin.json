@@ -1,16 +1,20 @@
 {
-  "name": "openclaw-fleet",
-  "version": "1.0.0",
-  "description": "Talk to your infrastructure. SSH-based fleet monitoring for OpenClaw.",
-  "entrypoint": "dist/index.js",
-  "skills": ["skills/"],
-  "config": {
+  "id": "openclaw-fleet",
+  "name": "OpenClaw Fleet by Leassh",
+  "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
+  "version": "0.1.0",
+  "configSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "configPath": {
         "type": "string",
         "description": "Path to fleet.yaml configuration file"
       }
     }
-  }
+  },
+  "contracts": {
+    "tools": ["fleet_status", "node_detail", "get_value_gap"]
+  },
+  "skills": ["skills/"]
 }

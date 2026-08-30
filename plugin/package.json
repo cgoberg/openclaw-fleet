@@ -1,11 +1,22 @@
 {
   "name": "openclaw-fleet",
-  "version": "1.0.0",
-  "description": "Talk to your infrastructure. SSH-based fleet monitoring for OpenClaw.",
+  "version": "0.1.0",
+  "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "test": "node test/smoke.test.mjs"
+  },
+  "files": [
+    "assets/",
+    "dist/",
+    "skills/",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": ["./src/index.ts"],
+    "runtimeExtensions": ["./dist/index.js"]
   },
   "dependencies": {},
   "devDependencies": {

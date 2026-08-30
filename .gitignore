@@ -1,6 +1,10 @@
 binary/target/
 plugin/node_modules/
 plugin/dist/
+release/
+
+# Local dev-editor config (may hold machine-specific server details)
+.vscode/
 
 # Local git backups (e.g. .git.backup/ from previous recovery steps)
 .git.backup*

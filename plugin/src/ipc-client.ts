@@ -45,8 +45,19 @@ export class FleetBinary extends EventEmitter {
     this.configPath = configPath;
   }
 
-  /** Resolve the binary path, preferring release over debug. */
+  /**
+   * Resolve the binary path.
+   * Order: OPENCLAW_FLEET_BINARY env override, then repo target dirs (release over debug).
+   */
   private resolveBinaryPath(): string {
+    const override = process.env.OPENCLAW_FLEET_BINARY;
+    if (override) {
+      if (fs.existsSync(override)) return override;
+      throw new Error(
+        `OPENCLAW_FLEET_BINARY is set but no binary exists at: ${override}`
+      );
+    }
+
     const base = path.resolve(__dirname, "..", "..", "binary", "target");
     const release = path.join(base, "release", "openclaw-fleet");
     const debug = path.join(base, "debug", "openclaw-fleet");

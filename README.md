@@ -1,6 +1,6 @@
-# openclaw-fleet
+# OpenClaw Fleet by Leassh
 
-> Talk to your infrastructure. Fleet monitoring for OpenClaw -- via SSH or lightweight agents.
+> Talk to your infrastructure. Free, read-only fleet monitoring for OpenClaw over SSH.
 
 Ask your AI agent about your machines -- and get real-time answers.
 
@@ -13,40 +13,35 @@ Agent:  All 6 nodes online.
         gpu-secondary  Active   CPU  3%  GPU 91%  RAM 68%  Disk 89GB free
         build-server   Active   CPU 45%  GPU --   RAM 82%  Disk 34GB free
         macbook        Away     CPU  8%  GPU --   RAM 61%  Disk 203GB free
-        ronaldo-pc     Idle     CPU  2%  GPU 94%  RAM 45%  Disk 512GB free
+        render-node     Idle     CPU  2%  GPU 94%  RAM 45%  Disk 512GB free
         nas            Active   CPU  1%  GPU --   RAM 23%  Disk 2.1TB free
 
-        ronaldo-pc has FortniteClient.exe using 94% GPU.
+        render-node has FortniteClient.exe using 94% GPU.
         Nobody's touched the keyboard in 47 minutes.
 ```
 
-## Two Ways to Connect
+## How it connects
 
-### Option A: SSH (zero install on targets)
-Add machines to `fleet.yaml` with their SSH details. Leassh probes them
-directly. Nothing installed on the monitored machines.
+Add SSH-reachable machines to `fleet.yaml`. OpenClaw Fleet probes them
+directly, so there is nothing to install on the monitored machines and no
+monitoring data has to leave your network.
 
-### Option B: Install the Agent (easiest setup)
-Install the lightweight Leassh agent on each machine. It connects to your
-server automatically using a pairing code. No SSH configuration needed.
-Works through firewalls and NAT.
-
-Both options give you the same monitoring data. SSH is ideal for servers
-and machines you can't install software on. The agent is ideal for
-desktops, laptops, and remote machines.
+OpenClaw Fleet is the free, read-only layer. [Leassh](https://leassh.com)
+builds on the same local-first approach with managed agents, family safety,
+and active controls.
 
 ---
 
 ## What It Does
 
-openclaw-fleet is an OpenClaw plugin that connects to your machines over SSH -- or via lightweight agents -- and collects system metrics: CPU, GPU, RAM, disk, running processes, idle time, logged-in users, and temperature. Your AI agent can then answer questions about your infrastructure in natural language, alert you proactively when something goes wrong, and detect trends before they become problems.
+OpenClaw Fleet is an OpenClaw plugin that connects to your machines over SSH and collects system metrics: CPU, GPU, RAM, disk, running processes, idle time, logged-in users, and temperature. Your AI agent can then answer questions about your infrastructure in natural language, alert you proactively when something goes wrong, and detect trends before they become problems.
 
 The Rust binary handles SSH connections and metric collection. The TypeScript plugin exposes tools to the OpenClaw agent and serves a live dashboard. Communication between the two happens over JSON-RPC on stdin/stdout.
 
 ## Features
 
 - **Real-time monitoring** -- CPU, GPU (nvidia-smi), VRAM, RAM, disk, temperature, processes, idle time, logged-in users
-- **Natural language** -- "What's .179 doing?" / "Is Ollama running?" / "Who's logged into .131?"
+- **Natural language** -- "What's build-node doing?" / "Is Ollama running?" / "Who's logged into gpu-node?"
 - **Proactive alerts** -- Node offline, disk critically low, disk filling fast, RAM exhaustion, temperature critical, SSH auth failures, login/logout events
 - **Trend detection** -- Linear regression over rolling metric windows; predicts when disk will fill, temperatures will overheat
 - **Live dashboard** -- Dark-themed single-page fleet view at `/fleet` with auto-refresh, leash tension bars, expandable process lists
@@ -56,30 +51,53 @@ The Rust binary handles SSH connections and metric collection. The TypeScript pl
 
 ## Quick Start
 
+**Prerequisites:** Node.js >= 20, a Rust toolchain, and an OpenClaw gateway.
+
+Build the binary and the plugin from source:
+
 ```bash
-openclaw plugins install openclaw-fleet
+git clone https://github.com/cgoberg/openclaw-fleet
+cd openclaw-fleet
+
+# Build the Rust binary (required -- the plugin spawns it)
+cargo build --release --manifest-path binary/Cargo.toml
+
+# Build the plugin
+cd plugin && npm ci && npm run build
+```
+
+Install into OpenClaw from the local checkout:
+
+```bash
+openclaw plugins install --link ./plugin
+openclaw plugins enable openclaw-fleet
+```
+
+Once the package is published on ClawHub/npm, `openclaw plugins install clawhub:openclaw-fleet` will work too. If OpenClaw cannot find your binary (for example with a non-linked install), point it at one explicitly:
+
+```bash
+export OPENCLAW_FLEET_BINARY=/path/to/openclaw-fleet
 ```
 
 Create `fleet.yaml` in your OpenClaw workspace:
 
 ```yaml
-# Agent-connected nodes appear automatically when they pair
-# You can also add SSH-probed nodes manually:
+# Add SSH-probed nodes:
 nodes:
   - name: gpu-server
-    host: 192.168.1.131
-    ssh: user@192.168.1.131
+    host: 10.0.0.11
+    ssh: user@10.0.0.11
     os: linux
     gpu: nvidia
 
   - name: macbook
-    host: 192.168.1.129
-    ssh: user@192.168.1.129
+    host: 10.0.0.12
+    ssh: user@10.0.0.12
     os: macos
 
   - name: windows-desktop
-    host: 192.168.1.122
-    ssh: user@192.168.1.122
+    host: 10.0.0.13
+    ssh: user@10.0.0.13
     os: windows
     gpu: nvidia
 
@@ -113,10 +131,10 @@ Agent:  5 of 6 nodes online. build-server went offline 3 minutes ago.
 **Single node deep-dive:**
 ```
 You:    What's gpu-primary doing?
-Agent:  gpu-primary (192.168.1.131, Linux)
+Agent:  gpu-primary (10.0.0.11, Linux)
         CPU 14%  GPU 91%  RAM 18.4/24.0 GB (77%)  Disk 142GB free
         GPU temp 72C  VRAM 18.2/24.0 GB
-        Users: carl
+        Users: operator
         Top processes:
           python train.py     -- GPU 91%, 14.2 GB RAM
           ollama serve        -- CPU 3%, 2.1 GB RAM
@@ -125,13 +143,13 @@ Agent:  gpu-primary (192.168.1.131, Linux)
 
 **Proactive alert -- your agent tells you before you ask:**
 ```
-Agent:  Hey -- .138 just went offline. Last seen 2 minutes ago, CPU was at 3%,
+Agent:  Hey -- render-node just went offline. Last seen 2 minutes ago, CPU was at 3%,
         nothing unusual before that. I'll let you know when it comes back.
 ```
 
 **Trend detection:**
 ```
-Agent:  .131 disk is at 8GB free and dropping about 12GB/hour. At this rate
+Agent:  gpu-node disk is at 8GB free and dropping about 12GB/hour. At this rate
         it'll be critical in about 40 minutes. You might want to check
         what's filling it up.
 ```
@@ -148,7 +166,7 @@ The fleet dashboard serves at `/fleet` -- a dark-themed, single-page view that a
 
   ▌ gpu-primary      ACTIVE     ████████████████████░░░░  87%
   ▌   GPU 87%   CPU 12%   RAM 74%   Disk 142GB
-  ▌   idle 2m / users: carl
+  ▌   idle 2m / users: operator
 
   ▌ gpu-secondary    ACTIVE     ██████████████████████░░  91%
   ▌   GPU 91%   CPU 3%    RAM 68%   Disk 89GB
@@ -159,9 +177,9 @@ The fleet dashboard serves at `/fleet` -- a dark-themed, single-page view that a
   ▌ macbook          AWAY       ██░░░░░░░░░░░░░░░░░░░░░░   8%
   ▌   GPU --    CPU 8%    RAM 61%   Disk 203GB
 
-  ▌ ronaldo-pc       IDLE       ███████████████████████░  94%
+  ▌ render-node       IDLE       ███████████████████████░  94%
   ▌   GPU 94%   CPU 2%    RAM 45%   Disk 512GB
-  ▌   idle 47m / users: ronaldo / FortniteClient.exe
+  ▌   idle 47m / users: render / FortniteClient.exe
 
   ▌ nas              ACTIVE     ░░░░░░░░░░░░░░░░░░░░░░░░   1%
   ▌   GPU --    CPU 1%    RAM 23%   Disk 2.1TB
@@ -170,7 +188,7 @@ The fleet dashboard serves at `/fleet` -- a dark-themed, single-page view that a
   Recent Events
   14:30  ● gpu-primary load: High
   14:28  ● build-server Active → Away → Active
-  14:15  ○ nas user login: carl → 1 users
+  14:15  ○ nas user login: operator → 1 users
 ```
 
 Each node row has a "leash tension" bar -- a visual fill that represents the max of CPU and GPU load. Colors shift from dim (idle) through amber (medium) to red (high). Click a node to expand and see its full process table.
@@ -278,9 +296,9 @@ The free plugin keeps a log of situations where it could have acted but could no
 Agent:  This week I spotted 14 situations where I could have helped
         with Leassh:
         - 8x: idle processes hogging GPU on shared machines
-        - 3x: Ollama stopped responding on .131
+        - 3x: Ollama stopped responding on gpu-node
         - 2x: disk space warnings on gpu-primary
-        - 1x: .138 went offline for 20 minutes
+        - 1x: render-node went offline for 20 minutes
 
         That is roughly 45 minutes of manual work I could have
         handled automatically.
@@ -296,15 +314,15 @@ Full `fleet.yaml` example:
 ```yaml
 nodes:
   - name: gpu-primary        # Display name (used in chat)
-    host: 192.168.1.131      # IP or hostname (for display)
-    ssh: carl@192.168.1.131  # SSH target (user@host or user@host:port)
+    host: 10.0.0.11      # IP or hostname (for display)
+    ssh: operator@10.0.0.11  # SSH target (user@host or user@host:port)
     os: linux                # linux, macos, or windows
     gpu: nvidia              # Optional: enables GPU probing
     shared: true             # Optional: marks as shared machine
 
   - name: windows-desktop
-    host: 192.168.1.122
-    ssh: carl@192.168.1.122:22
+    host: 10.0.0.13
+    ssh: operator@10.0.0.13:22
     os: windows
     gpu: nvidia
 
