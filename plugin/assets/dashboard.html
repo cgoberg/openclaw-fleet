@@ -167,9 +167,30 @@
     border-radius: 6px;
     transition: background 0.2s var(--ease-out);
     animation: slideIn 0.5s var(--ease-out) both;
+
+    /* Button reset */
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    width: 100%;
+    padding: 0;
   }
 
   .node:hover { background: var(--bg-hover); }
+
+  /* Focus styling for keyboard navigation */
+  .node:focus {
+    background: var(--bg-hover);
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  /* Hide tab focus indicator for non-keyboard interactions */
+  .node:focus:not(:focus-visible) {
+    outline: none;
+  }
 
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(12px); }
@@ -594,7 +615,12 @@
       procsHtml = '<div style="color:var(--text-dim);padding:8px 0">No process data available</div>';
     }
 
-    return `<div class="node ${isExpanded ? 'expanded' : ''}" data-name="${esc(n.name)}">
+    return `<button class="node ${isExpanded ? 'expanded' : ''}"
+                    data-name="${esc(n.name)}"
+                    aria-label="Toggle node details for ${esc(n.name)}"
+                    aria-expanded="${isExpanded ? 'true' : 'false'}"
+                    tabindex="0"
+                    type="button">
       <div class="node-indicator ${indicatorClass(act)}"></div>
       <div class="node-body">
         <div class="node-top">
@@ -611,7 +637,7 @@
         ${infoItems.length ? `<div class="node-info">${infoItems.join('<span class="sep">/</span>')}</div>` : ''}
         <div class="node-detail"><div class="detail-inner"><div class="detail-content">${procsHtml}</div></div></div>
       </div>
-    </div>`;
+    </button>`;
   }
 
   window._toggle = function(name) {
