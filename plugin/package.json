@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-fleet",
+  "name": "@cgoberg/openclaw-fleet",
   "version": "0.2.0",
   "description": "SSH fleet monitoring for OpenClaw by Leassh \u2014 standalone binary or server mode against a Leassh server.",
   "main": "dist/index.js",
@@ -20,7 +20,13 @@
     ],
     "runtimeExtensions": [
       "./dist/index.js"
-    ]
+    ],
+    "compat": {
+      "pluginApi": ">=1.0.0"
+    },
+    "build": {
+      "openclawVersion": "2026.10.7"
+    }
   },
   "dependencies": {},
   "devDependencies": {

@@ -59,7 +59,7 @@ check(
   manifest.configSchema?.type === "object",
   JSON.stringify(manifest.configSchema)
 );
-check("manifest id matches package name", manifest.id === pkg.name);
+check("manifest id matches package name", manifest.id === pkg.name.replace(/^@[^/]+\//, ""));
 check("dashboard contains no inline event handlers", !/<[^>]+\son[a-z]+\s*=/i.test(dashboard));
 check(
   "dashboard binds node clicks without interpolating JavaScript",
