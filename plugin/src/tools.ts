@@ -1,19 +1,23 @@
 // OpenClaw plugin API types -- using 'any' until SDK package is available
 
 import { FleetBinary } from "./ipc-client";
+import { FleetServerClient } from "./server-client";
+
+/** Either transport: stdio binary or WS server client (same surface). */
+export type Fleet = FleetBinary | FleetServerClient;
 
 /**
  * Register openclaw-fleet tools with the OpenClaw plugin API.
  * Read-only: fleet_status, node_detail, get_value_gap.
  */
-export function registerTools(api: any, binary: FleetBinary): void {
+export function registerTools(api: any, fleet: FleetBinary | FleetServerClient): void {
   api.registerTool({
     name: "fleet_status",
     description:
       "Get the current status of all nodes in the fleet -- connectivity, load, GPU, logged-in users.",
     parameters: {},
     execute: async () => {
-      const result = await binary.getFleetStatus();
+      const result = await fleet.getFleetStatus();
       return JSON.stringify(result, null, 2);
     },
   });
@@ -33,7 +37,7 @@ export function registerTools(api: any, binary: FleetBinary): void {
       required: ["node"],
     },
     execute: async (params: { node: string }) => {
-      const result = await binary.getNodeDetail(params.node);
+      const result = await fleet.getNodeDetail(params.node);
       return JSON.stringify(result, null, 2);
     },
   });
@@ -44,7 +48,7 @@ export function registerTools(api: any, binary: FleetBinary): void {
       "Get the value gap tracker -- situations where Leassh could have taken automated action but the free edition could only observe.",
     parameters: {},
     execute: async () => {
-      const result = await binary.getValueGap();
+      const result = await fleet.getValueGap();
       return JSON.stringify(result, null, 2);
     },
   });

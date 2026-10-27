@@ -1,8 +1,8 @@
 {
   "id": "openclaw-fleet",
   "name": "OpenClaw Fleet by Leassh",
-  "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
-  "version": "0.1.3",
+  "description": "SSH fleet monitoring for OpenClaw by Leassh \u2014 standalone binary or server mode against a Leassh server.",
+  "version": "0.2.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -10,11 +10,33 @@
       "configPath": {
         "type": "string",
         "description": "Path to fleet.yaml configuration file"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "standalone",
+          "server"
+        ],
+        "description": "standalone spawns the bundled binary; server pairs with a Leassh server (recommended when one runs on your LAN)"
+      },
+      "serverUrl": {
+        "type": "string",
+        "description": "Server mode: Leassh server base URL, e.g. http://192.168.1.127:8790"
+      },
+      "apiToken": {
+        "type": "string",
+        "description": "Server mode: openclaw-scope API token minted on the Leassh server"
       }
     }
   },
   "contracts": {
-    "tools": ["fleet_status", "node_detail", "get_value_gap"]
+    "tools": [
+      "fleet_status",
+      "node_detail",
+      "get_value_gap"
+    ]
   },
-  "skills": ["skills/"]
+  "skills": [
+    "skills/"
+  ]
 }

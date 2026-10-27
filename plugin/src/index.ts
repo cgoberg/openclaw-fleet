@@ -3,25 +3,66 @@
 import * as path from "path";
 import * as fs from "fs";
 import { FleetBinary } from "./ipc-client";
+import { FleetServerClient } from "./server-client";
+import { probeForLeasshServer } from "./mdns-probe";
 import { registerTools } from "./tools";
 
 const DASHBOARD_PATH = path.resolve(__dirname, "..", "assets", "dashboard.html");
+
+/**
+ * The fleet connection. Standalone spawns the bundled binary (stdio
+ * JSON-RPC); server pairs with a Leassh server over WS using the same
+ * dialect (connectors plan §0.2 — one dialect, multiple transports).
+ */
+type Fleet = FleetBinary | FleetServerClient;
+
+function resolveMode(api: any): { mode: "standalone" | "server"; serverUrl?: string; apiToken?: string } {
+  // Env overrides win (LEASSH_SERVER_URL present => server mode), then
+  // explicit plugin config, then configPath-only => standalone (back-compat).
+  const envUrl = process.env.LEASSH_SERVER_URL;
+  if (envUrl) {
+    const token = process.env.LEASSH_API_TOKEN;
+    if (!token) {
+      throw new Error(
+        "LEASSH_SERVER_URL is set but LEASSH_API_TOKEN is missing — server mode needs both"
+      );
+    }
+    return { mode: "server", serverUrl: envUrl, apiToken: token };
+  }
+  const cfg = api.pluginConfig ?? {};
+  if (cfg.mode === "server") {
+    if (!cfg.serverUrl || !cfg.apiToken) {
+      throw new Error(
+        "mode 'server' requires serverUrl and apiToken (an openclaw-scope token minted on the Leassh server)"
+      );
+    }
+    return { mode: "server", serverUrl: cfg.serverUrl, apiToken: cfg.apiToken };
+  }
+  return { mode: "standalone" };
+}
 
 export default {
   id: "openclaw-fleet",
   name: "Fleet Monitor",
 
   register(api: any): void {
-    // Resolve fleet config path
-    const configPath: string =
-      api.pluginConfig?.configPath ||
-      path.join(process.cwd(), "fleet.yaml");
+    const resolved = resolveMode(api);
 
-    // Create the IPC binary wrapper
-    const binary = new FleetBinary(configPath);
+    let fleet: Fleet;
+    if (resolved.mode === "server") {
+      fleet = new FleetServerClient(resolved.serverUrl!, resolved.apiToken!);
+      api.log?.(`[openclaw-fleet] server mode: ${resolved.serverUrl}`);
+    } else {
+      // configPath-only keeps standalone meaning (v0.1.x back-compat).
+      const configPath: string =
+        api.pluginConfig?.configPath ||
+        path.join(process.cwd(), "fleet.yaml");
+      fleet = new FleetBinary(configPath);
+    }
 
-    // Register tools (fleet_status, node_detail, get_value_gap)
-    registerTools(api, binary);
+    // Register tools (fleet_status, node_detail, get_value_gap) — identical
+    // surface in both modes; the transport is not the tools' business.
+    registerTools(api, fleet);
 
     // --- Gateway-authenticated HTTP routes ---
 
@@ -55,10 +96,9 @@ export default {
       auth: "gateway",
       handler: async (_req: any, res: any) => {
         try {
-          const status = await binary.getFleetStatus();
+          const status = await fleet.getFleetStatus();
           res.setHeader("Content-Type", "application/json");
           res.setHeader("Cache-Control", "no-store");
-          res.setHeader("X-Content-Type-Options", "nosniff");
           res.end(JSON.stringify(status));
         } catch (err: any) {
           res.statusCode = 502;
@@ -69,23 +109,42 @@ export default {
       },
     });
 
-    // --- Background service: start/stop the binary with the plugin lifecycle ---
+    // --- Background service: transport lifecycle with the plugin ---
+
     api.registerService({
-      name: "openclaw-fleet-binary",
-      start: () => {
-        binary.start();
-        binary.on("log", (msg: string) => {
+      name: "openclaw-fleet-connection",
+      start: async () => {
+        fleet.start();
+        fleet.on("log", (msg: string) => {
           api.log?.("[openclaw-fleet]", msg);
         });
-        binary.on("event", (method: string, params: unknown) => {
+        fleet.on("event", (method: string, params: unknown) => {
           api.log?.("[openclaw-fleet event]", method, params);
         });
-        binary.on("exit", (code: number | null, signal: string | null) => {
-          api.log?.(`[openclaw-fleet] binary exited code=${code} signal=${signal}`);
+        fleet.on("exit", (code: number | null, signal: string | null) => {
+          api.log?.(`[openclaw-fleet] transport exited code=${code} signal=${signal}`);
         });
+
+        // Split-brain guard (standalone only): if a Leassh server is
+        // already answering on this LAN, say so and point at it instead of
+        // silently running a second, diverging authority.
+        if (resolved.mode === "standalone") {
+          try {
+            const found = await probeForLeasshServer(2000);
+            if (found) {
+              api.log?.(
+                `[openclaw-fleet] WARNING: a Leassh server appears to be running on this LAN ` +
+                  `(port ${found.apiPort ?? found.port}). Running standalone alongside it risks ` +
+                `split-brain fleet state. Consider mode:"server" with serverUrl http://<host>:${found.apiPort ?? found.port}.`
+              );
+            }
+          } catch {
+            /* probing is best-effort; never block startup */
+          }
+        }
       },
       stop: () => {
-        binary.stop();
+        fleet.stop();
       },
     });
   },

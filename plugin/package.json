@@ -1,7 +1,7 @@
 {
   "name": "openclaw-fleet",
-  "version": "0.1.3",
-  "description": "Free, read-only SSH fleet monitoring for OpenClaw, built by Leassh.",
+  "version": "0.2.0",
+  "description": "SSH fleet monitoring for OpenClaw by Leassh \u2014 standalone binary or server mode against a Leassh server.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -15,8 +15,12 @@
     "openclaw.plugin.json"
   ],
   "openclaw": {
-    "extensions": ["./src/index.ts"],
-    "runtimeExtensions": ["./dist/index.js"]
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ]
   },
   "dependencies": {},
   "devDependencies": {
